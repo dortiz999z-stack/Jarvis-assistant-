@@ -91,8 +91,11 @@
                 console.log("Audio capturado: " + mensaje);
                 
                 orbe.className = "";
-                document.getElementById("respuesta").innerText = "Orden: " + mensaje;
-                responder(mensaje);
+                document.getElementById("respuesta").innerText = "Escuché: " + mensaje;
+                
+                setTimeout(() => {
+                    responder(mensaje);
+                }, 400);
             };
 
             reconocimiento.onerror = function(event) {
@@ -141,11 +144,12 @@
                     window.streamLinterna.getTracks().forEach(track => track.stop());
                     window.streamLinterna = null;
                 }
-            } else if (textoMinus.includes("cuenta hasta") || textoMinus.includes("cuenta del")) {
-                let match = mensaje.match(/\d+/g);
+            } else if (textoMinus.includes("cuenta")) {
+                // Extrae cualquier número que encuentre en la frase
+                let match = mensaje.match(/\d+/);
                 if (match) {
                     let hasta = parseInt(match[0]);
-                    respuesta = `Entendido, señor. Comenzando a contar hasta ${hasta}.`;
+                    respuesta = `Entendido, contando hasta ${hasta}, señor.`;
                     
                     document.getElementById("respuesta").innerText = respuesta;
                     let vozInicio = new SpeechSynthesisUtterance(respuesta);
@@ -167,7 +171,7 @@
                     }, 1000);
                     return;
                 } else {
-                    respuesta = "Por favor, indique hasta qué número desea que cuente, señor.";
+                    respuesta = "No detecté el número para contar, señor. Diga por ejemplo: cuenta 5.";
                 }
             } else if (textoMinus.includes("cuánto es") || textoMinus.includes("cuanto es")) {
                 try {
