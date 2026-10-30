@@ -190,7 +190,7 @@
                 let climas = [
                     "Condiciones meteorológicas óptimas, 24 grados centígrados y cielo completamente despejado.",
                     "Sensores atmosféricos detectan ligera brisa, temperatura agradable de 21 grados.",
-                    "Cielo despejado, sin probabilidades de lluvia en su zona por nowa, señor."
+                    "Cielo despejado, sin probabilidades de lluvia en su zona por ahora, señor."
                 ];
                 respuesta = climas[Math.floor(Math.random() * climas.length)];
             } else if (textoMinus.includes("lanza una moneda") || textoMinus.includes("cara o cruz")) {
@@ -207,7 +207,7 @@
                 let match = mensaje.match(/\d+/);
                 if (match) {
                     let tiempoSegundos = parseInt(match[0]);
-                    if (textoMinus.includes("minuto")) timepoSegundos *= 60;
+                    if (textoMinus.includes("minuto")) tiempoSegundos *= 60;
                     respuesta = `Temporizador configurado para ${match[0]} ${textoMinus.includes("minuto") ? 'minutos' : 'segundos'}. Le avisaré cuando termine, señor.`;
                     setTimeout(() => {
                         let alertaVoz = new SpeechSynthesisUtterance("¡Atención, señor! El tiempo del temporizador ha finalizado.");
@@ -232,6 +232,95 @@
                 if (window.streamLinterna) {
                     window.streamLinterna.getTracks().forEach(track => track.stop());
                     window.streamLinterna = null;
+                }
+            } else if (textoMinus.includes("ecuación cuadrática") || textoMinus.includes("ecuacion cuadratica") || textoMinus.includes("segundo grado")) {
+                try {
+                    let limpiar = mensaje.replace("jarvis", "").replace("ecuación cuadrática", "").replace("ecuacion cuadratica", "").replace("segundo grado", "").trim();
+                    let partes = limpiar.split("=");
+                    let ladoIzq = partes[0].trim();
+                    let matchA = ladoIzq.match(/([+-]?\d*\.?\d*)x\s*(?:\*\*|al cuadrado)/);
+                    let matchB = ladoIzq.match(/([+-]?\d*\.?\d*)x(?![\s*])/);
+                    let a = matchA && matchA[1] !== "" ? parseFloat(matchA[1]) : 1;
+                    if(matchA && matchA[1] === "-") a = -1;
+                    let b = matchB && matchB[1] !== "" ? parseFloat(matchB[1]) : 0;
+                    if(matchB && matchB[1] === "-") b = -1;
+                    let sinX = ladoIzq.replace(/([+-]?\d*\.?\d*)x\s*(?:\*\*|al cuadrado)/, "").replace(/([+-]?\d*\.?\d*)x/, "").trim();
+                    let c = sinX !== "" ? eval(sinX) : 0;
+                    let discriminante = (b * b) - (4 * a * c);
+                    if (discriminante < 0) {
+                        respuesta = "La ecuación tiene soluciones con números complejos, señor.";
+                    } else {
+                        let x1 = (-b + Math.sqrt(discriminante)) / (2 * a);
+                        let x2 = (-b - Math.sqrt(discriminante)) / (2 * a);
+                        if (x1 === x2) {
+                            respuesta = `La ecuación tiene una única solución: x es igual a ${x1}, señor.`;
+                        } else {
+                            respuesta = `Las soluciones son: x uno igual a ${x1} y x dos igual a ${x2}, señor.`;
+                        }
+                    }
+                } catch (e) {
+                    respuesta = "No pude procesar esa ecuación cuadrática, señor.";
+                }
+            } else if (textoMinus.includes("sistema de ecuaciones") || textoMinus.includes("sistema")) {
+                try {
+                    let limpiar = mensaje.replace("jarvis", "").replace("sistema de ecuaciones", "").replace("sistema", "").trim();
+                    let ecuaciones = limpiar.split("y");
+                    if (ecuaciones.length === 2) {
+                        let match1 = ecuaciones[0].trim().match(/([+-]?\d*\.?\d*)x\s*([+-]?\d*\.?\d*)y\s*=\s*([+-]?\d+\.?\d*)/);
+                        let match2 = ecuaciones[1].trim().match(/([+-]?\d*\.?\d*)x\s*([+-]?\d*\.?\d*)y\s*=\s*([+-]?\d+\.?\d*)/);
+                        if (match1 && match2) {
+                            let a1 = match1[1] === "" || match1[1] === "+" ? 1 : match1[1] === "-" ? -1 : parseFloat(match1[1]);
+                            let b1 = match1[2] === "" || match1[2] === "+" ? 1 : match1[2] === "-" ? -1 : parseFloat(match1[2]);
+                            let c1 = parseFloat(match1[3]);
+                            let a2 = match2[1] === "" || match2[1] === "+" ? 1 : match2[1] === "-" ? -1 : parseFloat(match2[1]);
+                            let b2 = match2[2] === "" || match2[2] === "+" ? 1 : match2[2] === "-" ? -1 : parseFloat(match2[2]);
+                            let c2 = parseFloat(match2[3]);
+                            let determinante = (a1 * b2) - (a2 * b1);
+                            if (determinante === 0) {
+                                respuesta = "El sistema no tiene solución única, señor.";
+                            } else {
+                                let x = ((c1 * b2) - (c2 * b1)) / determinante;
+                                let y = ((a1 * c2) - (a2 * c1)) / determinante;
+                                respuesta = `Por reducción, x es ${x} y y es ${y}, señor.`;
+                            }
+                        } else {
+                            respuesta = "No pude leer bien los coeficientes del sistema, señor.";
+                        }
+                    }
+                } catch (e) {
+                    respuesta = "No pude resolver el sistema, señor.";
+                }
+            } else if (textoMinus.includes("cuánto es") || textoMinus.includes("cuanto es")) {
+                try {
+                    let parteOperacion = textoMinus.split(/cuánto es|cuanto es/)[1];
+                    if(parteOperacion) {
+                        let operacionLimpia = parteOperacion
+                            .replace(/un medio/g, "0.5")
+                            .replace(/medio/g, "0.5")
+                            .replace(/un cuarto/g, "0.25")
+                            .replace(/tres cuartos/g, "0.75")
+                            .replace(/un tercio/g, "0.333")
+                            .replace(/por/g, "*")
+                            .replace(/entre/g, "/")
+                            .replace(/más/g, "+")
+                            .replace(/menos/g, "-")
+                            .replace(/al cuadrado/g, "**2")
+                            .replace(/al cubo/g, "**3");
+
+                        if (operacionLimpia.includes("raíz de") || operacionLimpia.includes("raiz de")) {
+                            let numeroStr = operacionLimpia.replace(/raíz de|raiz de/g, "").replace(/[^0-9.]/g, "").trim();
+                            let resultado = Math.sqrt(parseFloat(numeroStr));
+                            respuesta = `La raíz cuadrada de ${numeroStr} es ${resultado}, señor.`;
+                        } else {
+                            let operacionFinal = operacionLimpia.replace(/[^0-9+\-*/().]/g, "").trim();
+                            let resultado = Function('"use strict"; return (' + operacionFinal + ')')();
+                            respuesta = `El resultado es ${resultado}, señor.`;
+                        }
+                    } else {
+                        respuesta = "No especificó la operación, señor.";
+                    }
+                } catch (e) {
+                    respuesta = "No pude calcular esa operación, señor.";
                 }
             } else if (textoMinus.startsWith("anota") || textoMinus.startsWith("agrega tarea")) {
                 let tareaNueva = mensaje.replace("jarvis", "").replace("anota", "").replace("agrega tarea", "").trim();
@@ -273,25 +362,6 @@
                     pass += chars.charAt(Math.floor(Math.random() * chars.length));
                 }
                 respuesta = `Su contraseña generada es: ${pass}. Guárdela bien, señor.`;
-            } else if (textoMinus.includes("cuánto es") || textoMinus.includes("cuanto es")) {
-                try {
-                    let parteOperacion = textoMinus.split(/cuánto es|cuanto es/)[1];
-                    if(parteOperacion) {
-                        let operacionLimpia = parteOperacion
-                            .replace(/por/g, "*")
-                            .replace(/entre/g, "/")
-                            .replace(/más/g, "+")
-                            .replace(/menos/g, "-")
-                            .replace(/[^0-9+\-*/.]/g, "")
-                            .trim();
-                        let resultado = Function('"use strict"; return (' + operacionLimpia + ')')();
-                        respuesta = `El resultado es ${resultado}, señor.`;
-                    } else {
-                        respuesta = "No especificó la operación, señor.";
-                    }
-                } catch (e) {
-                    respuesta = "No pude calcular esa operación grande.";
-                }
             } else if (textoMinus.includes("chiste")) {
                 let chistes = [
                     "¿Qué hace una abeja en el gimnasio? ¡Zumba!",
@@ -301,60 +371,4 @@
             } else if (textoMinus.includes("curiosidad")) {
                 respuesta = "Las torres de alta tensión zumban debido a la vibración del metal por la electricidad.";
             } else if (textoMinus.includes("abre youtube")) {
-                respuesta = "Abriendo YouTube, señor.";
-                accionExtra = "https://youtube.com";
-            } else if (textoMinus.includes("abre google")) {
-                respuesta = "Abriendo Google, señor.";
-                accionExtra = "https://google.com";
-            } else if (textoMinus.includes("busca")) {
-                let partes = mensaje.split("busca");
-                let busqueda = partes[1] ? partes[1].trim() : "";
-                if(busqueda) {
-                    respuesta = "Buscando " + busqueda + " en la red.";
-                    accionExtra = "https://www.google.com/search?q=" + encodeURIComponent(busqueda);
-                } else {
-                    respuesta = "Por favor especifique qué desea buscar, señor.";
-                }
-            }
-
-            actualizarTemaOrbe();
-            orbe.classList.add("hablando");
-            document.getElementById("respuesta").innerText = respuesta;
-
-             bloqueadoPorHablar = true;
-            if (reconocimiento) {
-                try { reconocimiento.stop(); } catch(e) {}
-            }
-
-            let voz = new SpeechSynthesisUtterance(respuesta);
-            voz.lang = "es-ES";
-            voz.rate = velocidadVoz;
-            voz.pitch = 0.8;
-
-            let voces = speechSynthesis.getVoices();
-            if (voces.length > 0) {
-                let espanol = voces.filter(v => v.lang.startsWith('es'));
-                if (espanol.length > 1) voz.voice = espanol[1];
-                else voz.voice = espanol[0];
-            }
-
-            voz.onend = function() {
-                limpiarOrbe();
-                if (accionExtra) {
-                    window.open(accionExtra, '_blank');
-                }
-                bloqueadoPorHablar = false;
-                try { reconocimiento.start(); } catch(e) {}
-            };
-
-            speechSynthesis.speak(voz);
-        }
-
-        window.addEventListener('click', () => {
-            if (!reconocimiento) {
-                iniciarEscuchaTotal();
-            }
-        }, { once: true });
-    </script>
-</body>
-</html>
+                respuesta = "Abriendo Yo
