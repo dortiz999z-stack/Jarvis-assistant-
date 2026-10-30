@@ -141,6 +141,34 @@
                     window.streamLinterna.getTracks().forEach(track => track.stop());
                     window.streamLinterna = null;
                 }
+            } else if (textoMinus.includes("cuenta hasta") || textoMinus.includes("cuenta del")) {
+                let match = mensaje.match(/\d+/g);
+                if (match) {
+                    let hasta = parseInt(match[0]);
+                    respuesta = `Entendido, señor. Comenzando a contar hasta ${hasta}.`;
+                    
+                    document.getElementById("respuesta").innerText = respuesta;
+                    let vozInicio = new SpeechSynthesisUtterance(respuesta);
+                    vozInicio.lang = "es-ES";
+                    speechSynthesis.speak(vozInicio);
+
+                    let actual = 1;
+                    let intervalo = setInterval(() => {
+                        if (actual <= hasta) {
+                            document.getElementById("respuesta").innerText = `Contando: ${actual}`;
+                            let vozNum = new SpeechSynthesisUtterance(actual.toString());
+                            vozNum.lang = "es-ES";
+                            speechSynthesis.speak(vozNum);
+                            actual++;
+                        } else {
+                            clearInterval(intervalo);
+                            document.getElementById("respuesta").innerText = "Conteo finalizado, señor.";
+                        }
+                    }, 1000);
+                    return;
+                } else {
+                    respuesta = "Por favor, indique hasta qué número desea que cuente, señor.";
+                }
             } else if (textoMinus.includes("cuánto es") || textoMinus.includes("cuanto es")) {
                 try {
                     let parteOperacion = textoMinus.split(/cuánto es|cuanto es/)[1];
