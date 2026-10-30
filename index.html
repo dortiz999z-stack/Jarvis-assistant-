@@ -3,58 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Asistente - Jarvis Pro</title>
+    <title>Mi Asistente - Jarvis Mobile</title>
     <style>
         body {
             background: #0b0f19;
             color: #38bdf8;
             font-family: Arial, sans-serif;
             text-align: center;
-            padding: 30px;
+            padding: 40px 20px;
             margin: 0;
         }
         h1 {
             letter-spacing: 2px;
-            margin-bottom: 20px;
-            font-size: 26px;
+            margin-bottom: 10px;
+            font-size: 28px;
         }
         #orbe {
-            width: 140px;
-            height: 140px;
+            width: 150px;
+            height: 150px;
             background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, rgba(2, 132, 199, 0.1) 70%, rgba(11, 15, 25, 0.1) 100%);
             border-radius: 50%;
             margin: 30px auto;
-            box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
-            transition: 0.4s ease-in-out;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+            transition: 0.3s ease-in-out;
         }
         .escuchando {
-            opacity: 1 !important;
-            transform: scale(1.15);
             background: radial-gradient(circle, #4ade80 0%, #16a34a 70%, #0b0f19 100%) !important;
-            box-shadow: 0 0 35px #22c55e !important;
-        }
-        .pensando {
-            opacity: 1 !important;
+            box-shadow: 0 0 40px #22c55e !important;
             transform: scale(1.1);
-            background: radial-gradient(circle, #c084fc 0%, #7e22ce 70%, #0b0f19 100%) !important;
-            box-shadow: 0 0 35px #c084fc !important;
         }
         .hablando {
-            opacity: 1 !important;
-            transform: scale(1.15);
             background: radial-gradient(circle, #38bdf8 0%, #0284c7 70%, #0b0f19 100%) !important;
-            box-shadow: 0 0 35px #38bdf8 !important;
+            box-shadow: 0 0 40px #38bdf8 !important;
+            transform: scale(1.1);
         }
         button {
             background: #0284c7;
             color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 12px;
+            padding: 16px 32px;
+            border-radius: 14px;
             font-size: 18px;
-            margin-top: 15px;
+            margin-top: 20px;
             cursor: pointer;
-            box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
         }
         p {
             color: #e2e8f0;
@@ -67,80 +59,51 @@
 
     <h1>JARVIS</h1>
     <div id="orbe"></div>
-    <p id="respuesta">Toca la pantalla o el botón para activar el sistema.</p>
-    <button onclick="iniciarEscuchaTotal()">🎙️ Activar Sistema de Voz</button>
+    <p id="respuesta">Toca el botón y di tu comando.</p>
+    <button onclick="escucharVoz()">🎙️ Tocar para Hablar</button>
 
     <script>
-        let tareas = [];
-        let recordatorios = [];
         let velocidadVoz = 1.0;
-        let reconocimiento = null;
-        let bloqueadoPorHablar = false;
 
         function limpiarOrbe() {
-            let orbe = document.getElementById("orbe");
-            orbe.className = "";
+            document.getElementById("orbe").className = "";
         }
 
-        function iniciarEscuchaTotal() {
+        function escucharVoz() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                alert("Tu navegador no soporta reconocimiento de voz.");
+                alert("Tu navegador no soporta reconocimiento de voz. Usa Google Chrome.");
                 return;
             }
 
-            if (reconocimiento) {
-                try { reconocimiento.stop(); } catch(e) {}
-            }
-
-            reconocimiento = new SpeechRecognition();
+            let reconocimiento = new SpeechRecognition();
             reconocimiento.lang = "es-ES";
-            reconocimiento.continuous = true;
+            reconocimiento.continuous = false;
             reconocimiento.interimResults = false;
 
-            reconocimiento.onstart = function() {
-                let orbe = document.getElementById("orbe");
-                limpiarOrbe();
-                orbe.classList.add("escuchando");
-                document.getElementById("respuesta").innerText = "Jarvis escuchando...";
-            };
+            let orbe = document.getElementById("orbe");
+            limpiarOrbe();
+            orbe.classList.add("escuchando");
+            document.getElementById("respuesta").innerText = "Te escucho, señor...";
 
             reconocimiento.onresult = function(event) {
-                if (bloqueadoPorHablar) return;
-
-                let mensaje = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+                let mensaje = event.results[0][0].transcript.toLowerCase().trim();
                 console.log("Audio capturado: " + mensaje);
-
-                if (mensaje.includes("jarvis")) {
-                    let orbe = document.getElementById("orbe");
-                    limpiarOrbe();
-                    orbe.classList.add("pensando");
-                    document.getElementById("respuesta").innerText = "Orden: " + mensaje;
-                    
-                    setTimeout(() => {
-                        responder(mensaje);
-                    }, 300);
-                }
+                
+                orbe.className = "";
+                document.getElementById("respuesta").innerText = "Orden: " + mensaje;
+                responder(mensaje);
             };
 
             reconocimiento.onerror = function(event) {
-                console.log("Error de reconocimiento: ", event.error);
-            };
-
-            reconocimiento.onend = function() {
                 limpiarOrbe();
-                if (!bloqueadoPorHablar) {
-                    setTimeout(() => {
-                        try { reconocimiento.start(); } catch(e) {}
-                    }, 200);
-                }
+                document.getElementById("respuesta").innerText = "No capturé audio. Vuelve a tocar el botón.";
             };
 
             try {
                 reconocimiento.start();
-                document.getElementById("respuesta").innerText = "Sistema activo. Di \"Jarvis\"...";
             } catch(e) {
-                document.getElementById("respuesta").innerText = "Toca el botón para arrancar.";
+                document.getElementById("respuesta").innerText = "Toca el botón de nuevo.";
             }
         }
 
@@ -150,12 +113,10 @@
             let accionExtra = null;
             let orbe = document.getElementById("orbe");
 
-            limpiarOrbe();
-
             if (textoMinus.includes("hola")) {
-                respuesta = "Buenos días, señor. Sistemas al cien por ciento.";
+                respuesta = "Buenos días, señor. Sistemas activos.";
             } else if (textoMinus.includes("cómo estás") || textoMinus.includes("estado")) {
-                respuesta = "Servidores operando con normalidad, señor.";
+                respuesta = "Servidores operando al cien por ciento, señor.";
             } else if (textoMinus.includes("nombre")) {
                 respuesta = "Soy Jarvis, su sistema avanzado de asistencia.";
             } else if (textoMinus.includes("hora")) {
@@ -165,7 +126,7 @@
                 let hoy = new Date();
                 respuesta = "Hoy es " + hoy.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
             } else if (textoMinus.includes("clima") || textoMinus.includes("tiempo")) {
-                respuesta = "Condiciones meteorológicas óptimas, 24 grados y cielo despejado, señor.";
+                respuesta = "Condiciones óptimas, 24 grados y cielo despejado, señor.";
             } else if (textoMinus.includes("enciende la linterna") || textoMinus.includes("prende la linterna")) {
                 respuesta = "Encendiendo la linterna, señor.";
                 navigator.mediaDevices?.getUserMedia({ video: { facingMode: "environment" } })
@@ -221,11 +182,6 @@
             orbe.classList.add("hablando");
             document.getElementById("respuesta").innerText = respuesta;
 
-            bloqueadoPorHablar = true;
-            if (reconocimiento) {
-                try { reconocimiento.stop(); } catch(e) {}
-            }
-
             let voz = new SpeechSynthesisUtterance(respuesta);
             voz.lang = "es-ES";
             voz.rate = velocidadVoz;
@@ -241,18 +197,10 @@
                 if (accionExtra) {
                     window.open(accionExtra, '_blank');
                 }
-                bloqueadoPorHablar = false;
-                try { reconocimiento.start(); } catch(e) {}
             };
 
             speechSynthesis.speak(voz);
         }
-
-        window.addEventListener('click', () => {
-            if (!reconocimiento) {
-                iniciarEscuchaTotal();
-            }
-        }, { once: true });
     </script>
 </body>
 </html>
