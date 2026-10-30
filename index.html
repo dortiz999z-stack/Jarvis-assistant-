@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Asistente - Jarvis Ultimate Pro</title>
+
+<style>
+body {
+    background: #0b0f19;
+    color: #38bdf8;
+    font-family: Arial;
+    text-align: center;
+    padding: 30px;
+    margin: 0;
+}
+
+h1 {
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    font-size: 26px;
+}
+
+/* Orbe dinámico con efectos de color personalizados */
+#orbe {
+    width: 140px;
+    height: 140px;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, rgba(2, 132, 199, 0.1) 70%, rgba(11, 15, 25, 0.1) 100%);
+    border-radius: 50%;
+    margin: 40px auto;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
+    transition: 0.4s ease-in-out;
+}
+
+.escuchando {
+    opacity: 1 !important;
+    transform: scale(1.15);
+    background: radial-gradient(circle, #4ade80 0%, #16a34a 70%, #0b0f19 100%) !important;
+    box-shadow: 0 0 35px #22c55e !important;
+}
+
+.pensando {
+    opacity: 1 !important;
+    transform: scale(1.1);
+    background: radial-gradient(circle, #c084fc 0%, #7e22ce 70%, #0b0f19 100%) !important;
+    box-shadow: 0 0 35px #c084fc !important;
+}
+
+.hablando {
+    opacity: 1 !important;
+    transform: scale(1.15);
+    background: radial-gradient(circle, var(--color-principal, #38bdf8) 0%, var(--color-secundario, #0284c7) 70%, #0b0f19 100%) !important;
+    box-shadow: 0 0 35px var(--color-principal, #38bdf8) !important;
+}
+
+.error-estado {
+    opacity: 1 !important;
+    background: radial-gradient(circle, #f87171 0%, #dc2626 70%, #0b0f19 100%) !important;
+    box-shadow: 0 0 35px #ef4444 !important;
+}
+
+button {
+    background: #0284c7;
+    color: white;
+    border: none;
+    padding: 15px 35px;
+    border-radius: 12px;
+    font-size: 18px;
+    margin-top: 20px;
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+}
+
+p {
+    color: #e2e8f0;
+    font-size: 18px;
+    margin-top: 25px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>JARVIS</h1>
+
+<div id="orbe"></div>
+
+<p id="respuesta">Sistemas en línea. A la orden.</p>
+
+<button onclick="escuchar()">🎙️ Hablar</button>
+
+<script>
+let tareas = [];
+let recordatorios = [];
+let velocidadVoz = 1.0;
+let linternaEncendida = false;
+
+// Variables para temas de color personalizados del orbe
+let colorPrincipal = "#38bdf8";
+let colorSecundario = "#0284c7";
+
+function limpiarOrbe() {
+    let orbe = document.getElementById("orbe");
+    orbe.className = "";
+}
+
+function actualizarTemaOrbe() {
+    document.documentElement.style.setProperty('--color-principal', colorPrincipal);
+    document.documentElement.style.setProperty('--color-secundario', colorSecundario);
+}
+
+function escuchar() {
+    const reconocimiento = new webkitSpeechRecognition();
+    reconocimiento.lang = "es-ES";
+    
+    let orbe = document.getElementById("orbe");
+    limpiarOrbe();
+    orbe.classList.add("escuchando");
+    document.getElementById("respuesta").innerText = "Escuchando...";
+
+    reconocimiento.start();
+
+    reconocimiento.onresult = function(event) {
+        let mensaje = event.results[0][0].transcript;
+        orbe.classList.remove("escuchando");
+        orbe.classList.add("pensando");
+        document.getElementById("respuesta").innerText = "Procesando...";
+        
+        setTimeout(() => {
+            responder(mensaje);
+        }, 600);
+    };
+
+    reconocimiento.onerror = function() {
+        limpiarOrbe();
+        orbe.classList.add("error-estado");
+    };
+}
+
+function responder(mensaje) {
+    let respuesta = "Lo siento, señor, no reconozco ese comando.";
+    let textoMinus = mensaje.toLowerCase();
+    let accionExtra = null;
+    let orbe = document.getElementById("orbe");
+
+    limpiarOrbe();
+
+    // 1. Selector de Temas Visuales por Voz
+    if (textoMinus.includes("modo rojo") || textoMinus.includes("tema rojo")) {
+        colorPrincipal = "#f87171";
+        colorSecundario = "#dc2626";
+        respuesta = "Modo rojo de emergencia activado, señor.";
+    } else if (textoMinus.includes("modo azul") || textoMinus.includes("tema azul")) {
+        colorPrincipal = "#38bdf8";
+        colorSecundario = "#0284c7";
+        respuesta = "Modo azul clásico activado.";
+    } else if (textoMinus.includes("modo verde") || textoMinus.includes("tema verde")) {
+        colorPrincipal = "#4ade80";
+        colorSecundario = "#16a34a";
+        respuesta = "Modo verde ecológico activado.";
+
+    // 2. Conversación y Estado
+    } else if (textoMinus.includes("hola")) {
+        respuesta = "Buenos días, señor. Sistemas al cien por ciento.";
+    } else if (textoMinus.includes("cómo estás") || textoMinus.includes("estado")) {
+        respuesta = "Servidores operando con normalidad. Batería y sistemas óptimos.";
+    } else if (textoMinus.includes("nombre")) {
+        respuesta = "Soy Jarvis, su sistema avanzado de asistencia.";
+    } else if (textoMinus.includes("gracias")) {
+        respuesta = "Un placer servirle, señor.";
+    
+    // 3. Hora y Fecha
+    } else if (textoMinus.includes("hora")) {
+        let ahora = new Date();
+        respuesta = `Son las ${ahora.getHours()} con ${ahora.getMinutes()} minutos, señor.`;
+    } else if (textoMinus.includes("fecha") || textoMinus.includes("día es")) {
+        let hoy = new Date();
+        respuesta = "Hoy es " + hoy.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+
+    // 4. NUEVO: Simulador de Clima
+    } else if (textoMinus.includes("clima") || textoMinus.includes("tiempo") || textoMinus.includes("llover")) {
+        let climas = [
+            "Condiciones meteorológicas óptimas, 24 grados centígrados y cielo completamente despejado.",
+            "Sensores atmosféricos detectan ligera brisa, temperatura agradable de 21 grados.",
+            "Cielo despejado, sin probabilidades de lluvia en su zona por ahora, señor."
+        ];
+        respuesta = climas[Math.floor(Math.random() * climas.length)];
+
+    // 5. NUEVO: Lanzador de Moneda (Cara o Cruz)
+    } else if (textoMinus.includes("lanza una moneda") || textoMinus.includes("cara o cruz")) {
+        let resultadoMoneda = Math.random() < 0.5 ? "Cara" : "Cruz";
+        respuesta = `La moneda ha girado en el aire y el resultado es: ${resultadoMoneda}, señor.`;
+
+    // 6. NUEVO: Frases de Motivación / Estilo Iron Man
+    } else if (textoMinus.includes("motívame") || textoMinus.includes("motivacion") || textoMinus.includes("consejo")) {
+        let frases = [
+            "A veces hay que correr antes de aprender a caminar, señor.",
+            "El éxito no es final, el fracaso no es fatídico: lo que cuenta es el valor para continuar.",
+            "Construimos nuestro propio futuro. Mantenga el enfoque en los objetivos, señor."
+        ];
+        respuesta = frases[Math.floor(Math.random() * frases.length)];
+
+    // 7. Temporizador por Voz
+    } else if (textoMinus.includes("temporizador") || textoMinus.includes("cuenta regresiva")) {
+        let match = mensaje.match(/\d+/);
+        if (match) {
+            let tiempoSegundos = parseInt(match[0]);
+            if (textoMinus.includes("minuto")) {
+                tiempoSegundos *= 60;
+            }
+            respuesta = `Temporizador configurado para ${match[0]} ${textoMinus.includes("minuto") ? 'minutos' : 'segundos'}. Le avisaré cuando termine, señor.`;
+            
+            setTimeout(() => {
+                let alertaVoz = new SpeechSynthesisUtterance("¡Atención, señor! El tiempo del temporizador ha finalizado.");
+                alertaVoz.lang = "es-ES";
+                speechSynthesis.speak(alertaVoz);
+            }, tiempoSegundos * 1000);
+        } else {
+            respuesta = "No entendí cuántos segundos o minutos configurar en el temporizador.";
+        }
+
+    // 8. Control del Teléfono (Linterna y Configuraciones)
+    } else if (textoMinus.includes("enciende la linterna") || textoMinus.includes("prende la linterna")) {
+        linternaEncendida = true;
+        respuesta = "Encendiendo la linterna, señor.";
+        navigator.mediaDevices?.getUserMedia({ video: { facingMode: "environment" } })
+            .then(stream => {
+                window.streamLinterna = stream;
+                const track = stream.getVideoTracks()[0];
+                track.applyConstraints({ advanced: [{ torch: true }] }).catch(() => {});
+            }).catch(() => {});
+    } 
+    else if (textoMinus.includes("apaga la linterna")) {
+        linternaEncendida = false;
+        respuesta = "Apagando la linterna, señor.";
+        if (window.streamLinterna) {
+            window.streamLinterna.getTracks().forEach(track => track.stop());
+            window.streamLinterna = null;
+        }
+    } 
+    else if (textoMinus.includes("abre configuraciones") || textoMinus.includes("configuración")) {
+        respuesta = "Por seguridad del navegador, deslice la barra superior de su teléfono para acceder a configuraciones, señor.";
+    }
+
+    // 9. Organizador personal (Tareas y Recordatorios)
+    else if (textoMinus.startsWith("anota") || textoMinus.startsWith("agrega tarea")) {
+        let tareaNueva = mensaje.replace("anota", "").replace("agrega tarea", "").trim();
+        if(tareaNueva) {
+            tareas.push(tareaNueva);
+            respuesta = "Tarea agregada a su organizador personal.";
+        }
+    } else if (textoMinus.includes("mis tareas") || textoMinus.includes("lista de tareas")) {
+        if(tareas.length > 0) {
+            respuesta = "Sus tareas pendientes son: " + tareas.join(", ");
+        } else {
+            respuesta = "No tiene tareas pendientes en su lista.";
+        }
+    } else if (textoMinus.startsWith("recuérdame") || textoMinus.startsWith("recuerdame")) {
+        let rec = mensaje.replace("recuérdame", "").replace("recuerdame", "").trim();
+        if(rec) {
+            recordatorios.push(rec);
+            respuesta = "Recordatorio guardado con éxito, señor.";
+        }
+    } else if (textoMinus.includes("mis recordatorios")) {
+        if(recordatorios.length > 0) {
+            respuesta = "Sus recordatorios actuales son: " + recordatorios.join(", ");
+        } else {
+            respuesta = "No tiene recordatorios agendados.";
+        }
+
+    // 10. Control de Velocidad de Voz
+    } else if (textoMinus.includes("habla más rápido") || textoMinus.includes("mas rapido")) {
+        velocidadVoz = 1.3;
+        respuesta = "Entendido, ajustando mi velocidad de habla.";
+    } else if (textoMinus.includes("habla más lento") || textoMinus.includes("mas lento")) {
+        velocidadVoz = 0.8;
+        respuesta = "Entendido, hablaré más pausado.";
+    } else if (textoMinus.includes("velocidad normal")) {
+        velocidadVoz = 1.0;
+        respuesta = "Velocidad de voz restablecida.";
+
+    // 11. Generador de Contraseñas Seguras
+    } else if (textoMinus.includes("genera contraseña") || textoMinus.includes("contraseña segura")) {
+        let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$!";
+        let pass = "";
+        for (let i = 0; i < 8; i++) {
+            pass += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        respuesta = `Su contraseña generada es: ${pass}. Guárdela bien, señor.`;
+
+    // 12. Calculadora por voz
+    } else if (textoMinus.includes("cuánto es") || textoMinus.includes("cuanto es")) {
+        try {
+            let operacion = textoMinus.replace("cuánto es", "").replace("cuanto es", "")
+                .replace(/por/g, "*").replace(/entre/g, "/")
+                .replace(/más/g, "+").replace(/menos/g, "-").trim();
+            let resultado = eval(operacion);
+            respuesta = `El resultado es ${resultado}, señor.`;
+        } catch (e) {
+            respuesta = "No pude calcular esa operación.";
+        }
+
+    // 13. Chistes y Curiosidades
+    } else if (textoMinus.includes("chiste")) {
+        let chistes = [
+            "¿Qué hace una abeja en el gimnasio? ¡Zumba!",
+            "¿Por qué los pájaros vuelan al sur en invierno? Porque caminando tardarían mucho."
+        ];
+        respuesta = chistes[Math.floor(Math.random() * chistes.length)];
+    } else if (textoMinus.includes("curiosidad")) {
+        respuesta = "Las torres de alta tensión zumban debido a la vibración del metal por la electricidad.";
+
+    // 14. Navegación Web y Búsquedas
+    } else if (textoMinus.includes("abre youtube")) {
+        respuesta = "Abriendo YouTube, señor.";
+        accionExtra = "https://youtube.com";
+    } else if (textoMinus.includes("abre google")) {
+        respuesta = "Abriendo Google, señor.";
+        accionExtra = "https://google.com";
+    } else if (textoMinus.startsWith("busca")) {
+        let busqueda = mensaje.replace("busca", "").trim();
+        respuesta = "Buscando " + busqueda + " en la red.";
+        accionExtra = "https://www.google.com/search?q=" + encodeURIComponent(busqueda);
+    }
+
+    // Aplica el color del orbe antes de empezar a hablar
+    actualizarTemaOrbe();
+    orbe.classList.add("hablando");
+
+    document.getElementById("respuesta").innerText = respuesta;
+
+    // Reproducir voz
+    let voz = new SpeechSynthesisUtterance(respuesta);
+    voz.lang = "es-ES";
+    voz.rate = velocidadVoz;
+    voz.pitch = 0.8;
+
+    let voces = speechSynthesis.getVoices();
+    if (voces.length > 0) {
+        let espanol = voces.filter(v => v.lang.startsWith('es'));
+        if (espanol.length > 1) voz.voice = espanol[1];
+        else voz.voice = espanol[0];
+    }
+
+    voz.onend = function() {
+        limpiarOrbe();
+        if (accionExtra) {
+            window.open(accionExtra, '_blank');
+        }
+    };
+
+    speechSynthesis.speak(voz);
+}
+</script>
+
+</body>
+</html>
