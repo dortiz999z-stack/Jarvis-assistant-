@@ -138,6 +138,21 @@
             }
         }
 
+        // Función para leer números tanto en dígitos como en palabras
+        function extraerCantidad(texto) {
+            let diccionario = {
+                "un": 1, "uno": 1, "una": 1, "dos": 2, "tres": 3, "cuatro": 4, 
+                "cinco": 5, "seis": 6, "siete": 7, "ocho": 8, "nueve": 9, "diez": 10,
+                "once": 11, "doce": 12, "quince": 15, "veinte": 20, "treinta": 30,
+                "cincuenta": 50, "cien": 100
+            };
+            for (let palabra in diccionario) {
+                if (texto.includes(palabra)) return diccionario[palabra];
+            }
+            let match = texto.match(/\d+/);
+            return match ? parseInt(match[0]) : 0;
+        }
+
         function responder(mensaje) {
             estaHablando = true;
             let respuesta = "Lo siento, señor, no reconozco ese comando.";
@@ -161,12 +176,13 @@
             } else if (textoMinus.includes("hora")) {
                 let ahora = new Date();
                 respuesta = `Son las ${ahora.getHours()} con ${ahora.getMinutes()} minutos, señor.`;
-            } else if (textoMinus.includes("fecha") || textoMinus.includes("día fue") || textoMinus.includes("día será") || textoMinus.includes("dia fue") || textoMinus.includes("dia sera")) {
+            } else if (textoMinus.includes("fecha") || textoMinus.includes("día") || textoMinus.includes("dia") || textoMinus.includes("hace") || textoMinus.includes("mañana") || textoMinus.includes("ayer")) {
                 let fecha = new Date();
-                let matchNum = mensaje.match(/\d+/);
-                let cantidad = matchNum ? parseInt(matchNum[0]) : 0;
+                let cantidad = extraerCantidad(textoMinus);
 
-                if (cantidad > 0) {
+                if (cantidad > 0 || textoMinus.includes("un") || textoMinus.includes("uno")) {
+                    if (cantidad === 0) cantidad = 1; // Por si dice "hace un año" o "hace un día" sin número explícito
+
                     if (textoMinus.includes("año")) {
                         if (textoMinus.includes("hace") || textoMinus.includes("pasado") || textoMinus.includes("atrás")) {
                             fecha.setFullYear(fecha.getFullYear() - cantidad);
@@ -184,7 +200,6 @@
                             respuesta = `Dentro de ${cantidad} meses será ${fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
                         }
                     } else {
-                        // Por defecto cuenta días
                         if (textoMinus.includes("hace") || textoMinus.includes("pasado") || textoMinus.includes("atrás") || textoMinus.includes("ayer")) {
                             fecha.setDate(fecha.getDate() - cantidad);
                             respuesta = `Hace ${cantidad} días fue ${fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}`;
