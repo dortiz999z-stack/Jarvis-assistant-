@@ -84,7 +84,7 @@
 
             reconocimiento = new SpeechRecognition();
             reconocimiento.lang = "es-ES";
-            reconocimiento.continuous = true; // Permite que siga escuchando solo
+            reconocimiento.continuous = true;
             reconocimiento.interimResults = false;
 
             reconocimiento.onstart = function() {
@@ -97,19 +97,17 @@
             };
 
             reconocimiento.onresult = function(event) {
-                if (estaHablando) return; // Si Jarvis está hablando, ignora el ruido de fondo
+                if (estaHablando) return;
 
                 let mensaje = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
                 console.log("Audio capturado: " + mensaje);
 
-                // Revisa si mencionas la palabra clave "jarvis"
                 if (mensaje.includes("jarvis")) {
                     let orbe = document.getElementById("orbe");
                     limpiarOrbe();
                     orbe.classList.add("pensando");
                     document.getElementById("respuesta").innerText = "Escuchado: " + mensaje;
 
-                    // Pausamos momentáneamente el reconocimiento mientras procesa y responde
                     try { reconocimiento.stop(); } catch(e) {}
 
                     setTimeout(() => {
@@ -119,12 +117,10 @@
             };
 
             reconocimiento.onerror = function(event) {
-                // Si ocurre un corte de red o silencio prolongado, el sistema reintentará solo
                 console.log("Error de audio: ", event.error);
             };
 
             reconocimiento.onend = function() {
-                // Si Jarvis NO está hablando, vuelve a encender el micrófono automáticamente de inmediato
                 if (!estaHablando) {
                     setTimeout(() => {
                         try {
@@ -143,7 +139,7 @@
         }
 
         function responder(mensaje) {
-            estaHablando = true; // Bloquea el micrófono para que Jarvis no se escuche a sí mismo
+            estaHablando = true;
             let respuesta = "Lo siento, señor, no reconozco ese comando.";
             let textoMinus = mensaje.toLowerCase();
             let accionExtra = null;
@@ -155,12 +151,57 @@
                 respuesta = "Servidores operando al cien por ciento, señor.";
             } else if (textoMinus.includes("nombre")) {
                 respuesta = "Soy Jarvis, su sistema avanzado de asistencia.";
+            } else if (textoMinus.includes("motiva") || textoMinus.includes("motivación")) {
+                let frases = [
+                    "La disciplina tarde o temprano vence al talento, señor. Sigamos avanzando.",
+                    "No bajes el ritmo ahora, el esfuerzo pesado de hoy es el éxito de mañana.",
+                    "Cada línea de código te acerca más al objetivo, señor. Mantén el enfoque."
+                ];
+                respuesta = frases[Math.floor(Math.random() * frases.length)];
             } else if (textoMinus.includes("hora")) {
                 let ahora = new Date();
                 respuesta = `Son las ${ahora.getHours()} con ${ahora.getMinutes()} minutos, señor.`;
-            } else if (textoMinus.includes("fecha") || textoMinus.includes("día es")) {
-                let hoy = new Date();
-                respuesta = "Hoy es " + hoy.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+            } else if (textoMinus.includes("fecha") || textoMinus.includes("día fue") || textoMinus.includes("día será") || textoMinus.includes("dia fue") || textoMinus.includes("dia sera")) {
+                let fecha = new Date();
+                let matchNum = mensaje.match(/\d+/);
+                let cantidad = matchNum ? parseInt(matchNum[0]) : 0;
+
+                if (cantidad > 0) {
+                    if (textoMinus.includes("año")) {
+                        if (textoMinus.includes("hace") || textoMinus.includes("pasado") || textoMinus.includes("atrás")) {
+                            fecha.setFullYear(fecha.getFullYear() - cantidad);
+                            respuesta = `Hace ${cantidad} años fue ${fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
+                        } else {
+                            fecha.setFullYear(fecha.getFullYear() + cantidad);
+                            respuesta = `Dentro de ${cantidad} años será ${fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
+                        }
+                    } else if (textoMinus.includes("mes")) {
+                        if (textoMinus.includes("hace") || textoMinus.includes("pasado") || textoMinus.includes("atrás")) {
+                            fecha.setMonth(fecha.getMonth() - cantidad);
+                            respuesta = `Hace ${cantidad} meses fue ${fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
+                        } else {
+                            fecha.setMonth(fecha.getMonth() + cantidad);
+                            respuesta = `Dentro de ${cantidad} meses será ${fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
+                        }
+                    } else {
+                        // Por defecto cuenta días
+                        if (textoMinus.includes("hace") || textoMinus.includes("pasado") || textoMinus.includes("atrás") || textoMinus.includes("ayer")) {
+                            fecha.setDate(fecha.getDate() - cantidad);
+                            respuesta = `Hace ${cantidad} días fue ${fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}`;
+                        } else {
+                            fecha.setDate(fecha.getDate() + cantidad);
+                            respuesta = `Dentro de ${cantidad} días será ${fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}`;
+                        }
+                    }
+                } else if (textoMinus.includes("mañana")) {
+                    fecha.setDate(fecha.getDate() + 1);
+                    respuesta = "Mañana será " + fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+                } else if (textoMinus.includes("ayer")) {
+                    fecha.setDate(fecha.getDate() - 1);
+                    respuesta = "Ayer fue " + fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+                } else {
+                    respuesta = "Hoy es " + fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+                }
             } else if (textoMinus.includes("clima") || textoMinus.includes("tiempo")) {
                 respuesta = "Condiciones óptimas, 24 grados y cielo despejado, señor.";
             } else if (textoMinus.includes("enciende la linterna") || textoMinus.includes("prende la linterna")) {
@@ -265,7 +306,6 @@
                 if (accionExtra) {
                     window.open(accionExtra, '_blank');
                 }
-                // Liberamos el bloqueo y reiniciamos el micrófono automáticamente
                 estaHablando = false;
                 try {
                     reconocimiento.start();
