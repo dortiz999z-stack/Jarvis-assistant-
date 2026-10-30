@@ -1,0 +1,11 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Asistente de Jarvis.",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Jarvis",
+  "start_url": "/",
+  "theme_color": "#ffffff"
+}
