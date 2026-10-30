@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Asistente - Jarvis Mobile</title>
+    <title>Mi Asistente - Jarvis Manos Libres</title>
     <style>
         body {
             background: #0b0f19;
@@ -30,6 +30,11 @@
         .escuchando {
             background: radial-gradient(circle, #4ade80 0%, #16a34a 70%, #0b0f19 100%) !important;
             box-shadow: 0 0 40px #22c55e !important;
+            transform: scale(1.1);
+        }
+        .pensando {
+            background: radial-gradient(circle, #c084fc 0%, #7e22ce 70%, #0b0f19 100%) !important;
+            box-shadow: 0 0 40px #c084fc !important;
             transform: scale(1.1);
         }
         .hablando {
@@ -59,58 +64,86 @@
 
     <h1>JARVIS</h1>
     <div id="orbe"></div>
-    <p id="respuesta">Toca el botón y di tu comando.</p>
-    <button onclick="escucharVoz()">🎙️ Tocar para Hablar</button>
+    <p id="respuesta">Toca una vez para activar el modo manos libres.</p>
+    <button onclick="iniciarManosLibres()">🎙️ Activar Manos Libres</button>
 
     <script>
-        let velocidadVoz = 1.0;
+        let reconocimiento = null;
+        let estaHablando = false;
 
         function limpiarOrbe() {
             document.getElementById("orbe").className = "";
         }
 
-        function escucharVoz() {
+        function iniciarManosLibres() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
                 alert("Tu navegador no soporta reconocimiento de voz. Usa Google Chrome.");
                 return;
             }
 
-            let reconocimiento = new SpeechRecognition();
+            reconocimiento = new SpeechRecognition();
             reconocimiento.lang = "es-ES";
-            reconocimiento.continuous = false;
+            reconocimiento.continuous = true; // Permite que siga escuchando solo
             reconocimiento.interimResults = false;
 
-            let orbe = document.getElementById("orbe");
-            limpiarOrbe();
-            orbe.classList.add("escuchando");
-            document.getElementById("respuesta").innerText = "Te escucho, señor...";
+            reconocimiento.onstart = function() {
+                if (!estaHablando) {
+                    let orbe = document.getElementById("orbe");
+                    limpiarOrbe();
+                    orbe.classList.add("escuchando");
+                    document.getElementById("respuesta").innerText = "Modo manos libres activo. Di \"Jarvis\"...";
+                }
+            };
 
             reconocimiento.onresult = function(event) {
-                let mensaje = event.results[0][0].transcript.toLowerCase().trim();
+                if (estaHablando) return; // Si Jarvis está hablando, ignora el ruido de fondo
+
+                let mensaje = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
                 console.log("Audio capturado: " + mensaje);
-                
-                orbe.className = "";
-                document.getElementById("respuesta").innerText = "Escuché: " + mensaje;
-                
-                setTimeout(() => {
-                    responder(mensaje);
-                }, 400);
+
+                // Revisa si mencionas la palabra clave "jarvis"
+                if (mensaje.includes("jarvis")) {
+                    let orbe = document.getElementById("orbe");
+                    limpiarOrbe();
+                    orbe.classList.add("pensando");
+                    document.getElementById("respuesta").innerText = "Escuchado: " + mensaje;
+
+                    // Pausamos momentáneamente el reconocimiento mientras procesa y responde
+                    try { reconocimiento.stop(); } catch(e) {}
+
+                    setTimeout(() => {
+                        responder(mensaje);
+                    }, 300);
+                }
             };
 
             reconocimiento.onerror = function(event) {
-                limpiarOrbe();
-                document.getElementById("respuesta").innerText = "No capturé audio. Vuelve a tocar el botón.";
+                // Si ocurre un corte de red o silencio prolongado, el sistema reintentará solo
+                console.log("Error de audio: ", event.error);
+            };
+
+            reconocimiento.onend = function() {
+                // Si Jarvis NO está hablando, vuelve a encender el micrófono automáticamente de inmediato
+                if (!estaHablando) {
+                    setTimeout(() => {
+                        try {
+                            reconocimiento.start();
+                        } catch(e) {}
+                    }, 200);
+                }
             };
 
             try {
                 reconocimiento.start();
+                document.getElementById("respuesta").innerText = "Sistema escuchando en segundo plano...";
             } catch(e) {
-                document.getElementById("respuesta").innerText = "Toca el botón de nuevo.";
+                document.getElementById("respuesta").innerText = "Toca el botón para arrancar.";
             }
         }
 
         function responder(mensaje) {
+            estaHablando = true; // Bloquea el micrófono para que Jarvis no se escuche a sí mismo
             let respuesta = "Lo siento, señor, no reconozco ese comando.";
             let textoMinus = mensaje.toLowerCase();
             let accionExtra = null;
@@ -145,7 +178,6 @@
                     window.streamLinterna = null;
                 }
             } else if (textoMinus.includes("cuenta")) {
-                // Extrae cualquier número que encuentre en la frase
                 let match = mensaje.match(/\d+/);
                 if (match) {
                     let hasta = parseInt(match[0]);
@@ -154,24 +186,28 @@
                     document.getElementById("respuesta").innerText = respuesta;
                     let vozInicio = new SpeechSynthesisUtterance(respuesta);
                     vozInicio.lang = "es-ES";
+                    
+                    vozInicio.onend = function() {
+                        let actual = 1;
+                        let intervalo = setInterval(() => {
+                            if (actual <= hasta) {
+                                document.getElementById("respuesta").innerText = `Contando: ${actual}`;
+                                let vozNum = new SpeechSynthesisUtterance(actual.toString());
+                                vozNum.lang = "es-ES";
+                                speechSynthesis.speak(vozNum);
+                                actual++;
+                            } else {
+                                clearInterval(intervalo);
+                                document.getElementById("respuesta").innerText = "Conteo finalizado, señor.";
+                                estaHablando = false;
+                                try { reconocimiento.start(); } catch(e) {}
+                            }
+                        }, 1000);
+                    };
                     speechSynthesis.speak(vozInicio);
-
-                    let actual = 1;
-                    let intervalo = setInterval(() => {
-                        if (actual <= hasta) {
-                            document.getElementById("respuesta").innerText = `Contando: ${actual}`;
-                            let vozNum = new SpeechSynthesisUtterance(actual.toString());
-                            vozNum.lang = "es-ES";
-                            speechSynthesis.speak(vozNum);
-                            actual++;
-                        } else {
-                            clearInterval(intervalo);
-                            document.getElementById("respuesta").innerText = "Conteo finalizado, señor.";
-                        }
-                    }, 1000);
                     return;
                 } else {
-                    respuesta = "No detecté el número para contar, señor. Diga por ejemplo: cuenta 5.";
+                    respuesta = "Por favor, indique el número para contar, señor.";
                 }
             } else if (textoMinus.includes("cuánto es") || textoMinus.includes("cuanto es")) {
                 try {
@@ -216,7 +252,7 @@
 
             let voz = new SpeechSynthesisUtterance(respuesta);
             voz.lang = "es-ES";
-            voz.rate = velocidadVoz;
+            voz.rate = 1.0;
 
             let voces = speechSynthesis.getVoices();
             if (voces.length > 0) {
@@ -229,6 +265,11 @@
                 if (accionExtra) {
                     window.open(accionExtra, '_blank');
                 }
+                // Liberamos el bloqueo y reiniciamos el micrófono automáticamente
+                estaHablando = false;
+                try {
+                    reconocimiento.start();
+                } catch(e) {}
             };
 
             speechSynthesis.speak(voz);
